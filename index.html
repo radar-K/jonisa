@@ -461,6 +461,74 @@
       const startWeights = { 1: 71.4, 2: 65.5 };
       const goalWeight = 5.0; // kg to lose
 
+      // Load saved data from localStorage
+      function loadWeightData() {
+        const savedData = localStorage.getItem("battleOfFatizWeights");
+        if (savedData) {
+          const weights = JSON.parse(savedData);
+
+          // Restore all saved weights
+          Object.keys(weights).forEach((date) => {
+            const player1Input = document.querySelector(
+              `input[data-player="1"][data-date="${date}"]`
+            );
+            const player2Input = document.querySelector(
+              `input[data-player="2"][data-date="${date}"]`
+            );
+
+            if (player1Input && weights[date].player1) {
+              player1Input.value = weights[date].player1;
+            }
+            if (player2Input && weights[date].player2) {
+              player2Input.value = weights[date].player2;
+            }
+          });
+
+          // Update colors and progress after loading
+          document.querySelectorAll(".weight-input").forEach((input) => {
+            if (input.value) {
+              updateWeightColors({ target: input });
+            }
+          });
+          updateProgress();
+        }
+      }
+
+      // Save weight data to localStorage
+      function saveWeightData() {
+        const weights = {};
+
+        // Get all dates
+        const dates = [
+          ...new Set(
+            Array.from(document.querySelectorAll(".weight-input")).map(
+              (input) => input.dataset.date
+            )
+          ),
+        ];
+
+        dates.forEach((date) => {
+          const player1Input = document.querySelector(
+            `input[data-player="1"][data-date="${date}"]`
+          );
+          const player2Input = document.querySelector(
+            `input[data-player="2"][data-date="${date}"]`
+          );
+
+          if (
+            (player1Input && player1Input.value) ||
+            (player2Input && player2Input.value)
+          ) {
+            weights[date] = {
+              player1: player1Input ? player1Input.value : "",
+              player2: player2Input ? player2Input.value : "",
+            };
+          }
+        });
+
+        localStorage.setItem("battleOfFatizWeights", JSON.stringify(weights));
+      }
+
       function getPreviousWeight(player, currentDate) {
         // Get all inputs for this player
         const playerInputs = document.querySelectorAll(
@@ -515,7 +583,7 @@
         const currentWeight = parseFloat(input.value);
 
         if (isNaN(currentWeight)) {
-          return;
+          return true;
         }
 
         // Find previous weight
@@ -661,16 +729,23 @@
         input.addEventListener("blur", function () {
           if (validateWeight(input)) {
             updateProgress();
+            saveWeightData(); // Save after each weight entry
           }
         });
         input.addEventListener("keypress", function (e) {
           if (e.key === "Enter") {
             if (validateWeight(input)) {
               updateProgress();
+              saveWeightData(); // Save after each weight entry
             }
             input.blur();
           }
         });
+      });
+
+      // Load saved data when page loads
+      window.addEventListener("load", function () {
+        loadWeightData();
       });
 
       // Initial progress update
