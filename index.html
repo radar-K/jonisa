@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>theBattleoftheFatiz</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f8fafc;
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        text-align: center;
+        color: #4a5568;
+        margin-bottom: 30px;
+        font-size: 2.5em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .players {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 40px;
+        justify-content: center;
+      }
+
+      .player {
+        text-align: center;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        padding: 25px;
+        border-radius: 12px;
+        color: white;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        flex: 1;
+        max-width: 350px;
+      }
+
+      .player h2 {
+        margin: 0 0 15px 0;
+        font-size: 1.8em;
+      }
+
+      .start-weight {
+        font-size: 1.4em;
+        font-weight: bold;
+      }
+
+      .current-weight {
+        font-size: 1.2em;
+        margin-top: 10px;
+      }
+
+      .progress {
+        margin-top: 15px;
+        font-size: 1.1em;
+        font-weight: bold;
+      }
+
+      .progress-bar-container {
+        margin-top: 10px;
+        width: 100%;
+        height: 20px;
+        background-color: rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        overflow: hidden;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+      }
+
+      .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        border-radius: 8px;
+        transition: width 0.5s ease;
+        position: relative;
+      }
+
+      .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        white-space: nowrap;
+      }
+
+      .winner {
+        background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+        box-shadow: 0 0 25px #fbbf24, 0 0 50px #fbbf24, 0 0 75px #fbbf24;
+        animation: pulse 2s infinite,
+          winner-glow 2s ease-in-out infinite alternate;
+      }
+
+      @keyframes winner-glow {
+        from {
+          box-shadow: 0 0 20px #fbbf24, 0 0 30px #fbbf24, 0 0 40px #fbbf24;
+        }
+        to {
+          box-shadow: 0 0 30px #fbbf24, 0 0 40px #fbbf24, 0 0 50px #fbbf24;
+        }
+      }
+
+      .leading {
+        box-shadow: 0 0 25px #fbbf24, 0 0 50px #fbbf24, 0 0 75px #fbbf24;
+        animation: glow 2s ease-in-out infinite alternate;
+      }
+
+      @keyframes glow {
+        from {
+          box-shadow: 0 0 20px #fbbf24, 0 0 30px #fbbf24, 0 0 40px #fbbf24;
+        }
+        to {
+          box-shadow: 0 0 30px #fbbf24, 0 0 40px #fbbf24, 0 0 50px #fbbf24;
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .weight-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .weight-table th {
+        background: #fef3c7;
+        color: #2d3748;
+        padding: 15px;
+        text-align: center;
+        font-weight: bold;
+        position: relative;
+      }
+
+      .leader-flag {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        font-size: 20px;
+        animation: wave 1s ease-in-out infinite;
+      }
+
+      @keyframes wave {
+        0%,
+        100% {
+          transform: translateY(-50%) rotate(-10deg);
+        }
+        50% {
+          transform: translateY(-50%) rotate(10deg);
+        }
+      }
+
+      .weight-table td {
+        padding: 12px;
+        text-align: center;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .weight-input {
+        width: 80px;
+        padding: 8px;
+        border: 2px solid #e2e8f0;
+        border-radius: 5px;
+        text-align: center;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        -moz-appearance: textfield;
+      }
+
+      .weight-input::-webkit-outer-spin-button,
+      .weight-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .weight-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+      }
+
+      .weight-up {
+        background-color: #fed7d7;
+        border-color: #e53e3e;
+      }
+
+      .weight-same {
+        background-color: #fefcbf;
+        border-color: #d69e2e;
+      }
+
+      .weight-down {
+        background-color: #c6f6d5;
+        border-color: #38a169;
+      }
+
+      .date-cell {
+        font-weight: bold;
+        background-color: #f7fafc;
+        width: 100px;
+      }
+
+      @media (max-width: 768px) {
+        .players {
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .container {
+          padding: 20px;
+        }
+
+        .weight-table {
+          font-size: 14px;
+        }
+
+        .weight-input {
+          width: 60px;
+          padding: 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🏆 theBattleoftheFatiz 🏆</h1>
+
+      <div class="players">
+        <div class="player" id="player1">
+          <h2 id="player1Name">Jonisa the fatSlayer</h2>
+          <div class="start-weight">Startvikt: 71,4 kg</div>
+          <div class="current-weight" id="player1Current">
+            Nuvarande: 71,4 kg
+          </div>
+          <div class="progress" id="player1Progress">Återstår: 5,0 kg</div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="player1Bar" style="width: 0%">
+              <div class="progress-text" id="player1BarText">0,0 / 5,0 kg</div>
+            </div>
+          </div>
+        </div>
+        <div class="player" id="player2">
+          <h2 id="player2Name">Princess fatass</h2>
+          <div class="start-weight">Startvikt: 65,5 kg</div>
+          <div class="current-weight" id="player2Current">
+            Nuvarande: 65,5 kg
+          </div>
+          <div class="progress" id="player2Progress">Återstår: 5,0 kg</div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="player2Bar" style="width: 0%">
+              <div class="progress-text" id="player2BarText">0,0 / 5,0 kg</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <table class="weight-table">
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Jonisa the fatSlayer</th>
+            <th>Princess fatass</th>
+          </tr>
+        </thead>
+        <tbody id="weightTableBody">
+          <tr>
+            <td class="date-cell">08/22</td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                value="71.4"
+                data-player="1"
+                data-date="08/22"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                value="65.5"
+                data-player="2"
+                data-date="08/22"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td class="date-cell">08/23</td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="1"
+                data-date="08/23"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="2"
+                data-date="08/23"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td class="date-cell">08/24</td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="1"
+                data-date="08/24"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="2"
+                data-date="08/24"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td class="date-cell">08/25</td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="1"
+                data-date="08/25"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="2"
+                data-date="08/25"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td class="date-cell">08/26</td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="1"
+                data-date="08/26"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="2"
+                data-date="08/26"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td class="date-cell">08/27</td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="1"
+                data-date="08/27"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="2"
+                data-date="08/27"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td class="date-cell">08/28</td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="1"
+                data-date="08/28"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="2"
+                data-date="08/28"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      const startWeights = { 1: 71.4, 2: 65.5 };
+      const goalWeight = 5.0; // kg to lose
+
+      function getPreviousWeight(player, currentDate) {
+        // Get all inputs for this player
+        const playerInputs = document.querySelectorAll(
+          `input[data-player="${player}"]`
+        );
+        const inputsArray = Array.from(playerInputs);
+
+        // Find current input index
+        const currentInput = document.querySelector(
+          `input[data-player="${player}"][data-date="${currentDate}"]`
+        );
+        const currentIndex = inputsArray.indexOf(currentInput);
+
+        // Look for previous non-empty value
+        for (let i = currentIndex - 1; i >= 0; i--) {
+          if (inputsArray[i].value) {
+            return parseFloat(inputsArray[i].value);
+          }
+        }
+
+        // If no previous value found, return start weight
+        return startWeights[player];
+      }
+
+      function updateWeightColors(event) {
+        const input = event.target;
+        const player = input.dataset.player;
+        const currentDate = input.dataset.date;
+        const currentWeight = parseFloat(input.value);
+
+        if (isNaN(currentWeight)) {
+          input.className = "weight-input";
+          return;
+        }
+
+        // Find previous weight
+        const previousWeight = getPreviousWeight(player, currentDate);
+
+        // Apply color based on weight change (no validation here)
+        if (currentWeight > previousWeight) {
+          input.className = "weight-input weight-up";
+        } else if (currentWeight === previousWeight) {
+          input.className = "weight-input weight-same";
+        } else {
+          input.className = "weight-input weight-down";
+        }
+      }
+
+      function validateWeight(input) {
+        const player = input.dataset.player;
+        const currentDate = input.dataset.date;
+        const currentWeight = parseFloat(input.value);
+
+        if (isNaN(currentWeight)) {
+          return;
+        }
+
+        // Find previous weight
+        const previousWeight = getPreviousWeight(player, currentDate);
+
+        // Validate weight range (±2kg from previous weight)
+        const minWeight = previousWeight - 2;
+        const maxWeight = previousWeight + 2;
+
+        if (currentWeight < minWeight || currentWeight > maxWeight) {
+          // Reset to previous weight if out of range
+          input.value = previousWeight.toFixed(1);
+
+          // Show temporary warning
+          input.style.backgroundColor = "#fecaca";
+          input.style.borderColor = "#dc2626";
+
+          setTimeout(() => {
+            updateWeightColors({ target: input });
+          }, 1000);
+
+          return false;
+        }
+
+        return true;
+      }
+
+      function updateProgress() {
+        // Get latest weights for both players
+        const player1Inputs = document.querySelectorAll(
+          'input[data-player="1"]'
+        );
+        const player2Inputs = document.querySelectorAll(
+          'input[data-player="2"]'
+        );
+
+        let latestWeight1 = startWeights[1];
+        let latestWeight2 = startWeights[2];
+
+        // Find the latest entered weight for each player
+        for (let i = player1Inputs.length - 1; i >= 0; i--) {
+          if (player1Inputs[i].value) {
+            latestWeight1 = parseFloat(player1Inputs[i].value);
+            break;
+          }
+        }
+
+        for (let i = player2Inputs.length - 1; i >= 0; i--) {
+          if (player2Inputs[i].value) {
+            latestWeight2 = parseFloat(player2Inputs[i].value);
+            break;
+          }
+        }
+
+        // Calculate progress
+        const lost1 = Math.max(0, startWeights[1] - latestWeight1);
+        const lost2 = Math.max(0, startWeights[2] - latestWeight2);
+        const remaining1 = Math.max(0, goalWeight - lost1);
+        const remaining2 = Math.max(0, goalWeight - lost2);
+
+        // Calculate progress percentages
+        const progress1 = Math.min(100, (lost1 / goalWeight) * 100);
+        const progress2 = Math.min(100, (lost2 / goalWeight) * 100);
+
+        // Update display
+        document.getElementById(
+          "player1Current"
+        ).textContent = `Nuvarande: ${latestWeight1.toFixed(1)} kg`;
+        document.getElementById(
+          "player2Current"
+        ).textContent = `Nuvarande: ${latestWeight2.toFixed(1)} kg`;
+        document.getElementById(
+          "player1Progress"
+        ).textContent = `Återstår: ${remaining1.toFixed(1)} kg`;
+        document.getElementById(
+          "player2Progress"
+        ).textContent = `Återstår: ${remaining2.toFixed(1)} kg`;
+
+        // Update progress bars
+        document.getElementById("player1Bar").style.width = progress1 + "%";
+        document.getElementById("player2Bar").style.width = progress2 + "%";
+        document.getElementById(
+          "player1BarText"
+        ).textContent = `${lost1.toFixed(1)} / ${goalWeight.toFixed(1)} kg`;
+        document.getElementById(
+          "player2BarText"
+        ).textContent = `${lost2.toFixed(1)} / ${goalWeight.toFixed(1)} kg`;
+
+        // Update table headers with flags
+        const player1Header = document.querySelector("th:nth-child(2)");
+        const player2Header = document.querySelector("th:nth-child(3)");
+
+        // Remove existing flags
+        document
+          .querySelectorAll(".leader-flag")
+          .forEach((flag) => flag.remove());
+
+        // Check for winner and leader
+        const player1Element = document.getElementById("player1");
+        const player2Element = document.getElementById("player2");
+
+        // Remove all special classes
+        player1Element.classList.remove("winner", "leading");
+        player2Element.classList.remove("winner", "leading");
+
+        if (remaining1 === 0 && remaining2 > 0) {
+          // Player 1 wins
+          player1Element.classList.add("winner");
+          const flag = document.createElement("span");
+          flag.className = "leader-flag";
+          flag.textContent = "🏆";
+          player1Header.appendChild(flag);
+        } else if (remaining2 === 0 && remaining1 > 0) {
+          // Player 2 wins
+          player2Element.classList.add("winner");
+          const flag = document.createElement("span");
+          flag.className = "leader-flag";
+          flag.textContent = "🏆";
+          player2Header.appendChild(flag);
+        } else if (remaining1 !== remaining2) {
+          // Someone is leading (but hasn't won yet)
+          if (remaining1 < remaining2) {
+            // Player 1 is leading (has less weight to lose)
+            player1Element.classList.add("leading");
+            const flag = document.createElement("span");
+            flag.className = "leader-flag";
+            flag.textContent = "🚩";
+            player1Header.appendChild(flag);
+          } else {
+            // Player 2 is leading
+            player2Element.classList.add("leading");
+            const flag = document.createElement("span");
+            flag.className = "leader-flag";
+            flag.textContent = "🚩";
+            player2Header.appendChild(flag);
+          }
+        }
+      }
+
+      // Add event listeners to all inputs
+      document.querySelectorAll(".weight-input").forEach((input) => {
+        input.addEventListener("input", updateWeightColors);
+        input.addEventListener("blur", function () {
+          if (validateWeight(input)) {
+            updateProgress();
+          }
+        });
+        input.addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            if (validateWeight(input)) {
+              updateProgress();
+            }
+            input.blur();
+          }
+        });
+      });
+
+      // Initial progress update
+      updateProgress();
+    </script>
+  </body>
+</html>
