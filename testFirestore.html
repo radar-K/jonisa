@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Firestore Test</title>
+  </head>
+  <body>
+    <h1>Firestore Test</h1>
+    <button id="sendBtn">Skicka testdata till Firestore</button>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        collection,
+        addDoc,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDyrOK_a2igP963TokPnllw7MN-dFByaYk",
+        authDomain: "thebattleofthefatiz.firebaseapp.com",
+        projectId: "thebattleofthefatiz",
+        storageBucket: "thebattleofthefatiz.firebasestorage.app",
+        messagingSenderId: "1070564367645",
+        appId: "1:1070564367645:web:578a3e117ce85e483d95f4",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      const btn = document.getElementById("sendBtn");
+
+      btn.addEventListener("click", async () => {
+        try {
+          // Skapar ett nytt dokument med unikt ID i collection "weights"
+          const docRef = await addDoc(collection(db, "weights"), {
+            player: 1,
+            date: new Date().toLocaleDateString(),
+            weight: Math.floor(Math.random() * 30) + 50, // random vikt mellan 50-80 för test
+            timestamp: new Date(),
+          });
+
+          alert("Testdokument skickat! ID: " + docRef.id);
+          console.log("Testdokument skickat med ID:", docRef.id);
+        } catch (error) {
+          console.error("Fel vid sparning:", error);
+          alert("Fel: " + error.message);
+        }
+      });
+    </script>
+  </body>
+</html>

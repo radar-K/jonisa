@@ -14,6 +14,10 @@
         color: #333;
       }
 
+      .current-weight {
+        color: #94baf9; /* blå färg */
+      }
+
       .container {
         max-width: 900px;
         margin: 0 auto;
@@ -194,6 +198,8 @@
         font-size: 14px;
         transition: all 0.3s ease;
         -moz-appearance: textfield;
+        appearance: textfield;
+        -webkit-appearance: none;
       }
 
       .weight-input::-webkit-outer-spin-button,
@@ -258,9 +264,14 @@
         <div class="player" id="player1">
           <h2 id="player1Name">Jonisa the fatSlayer</h2>
           <div class="start-weight">Startvikt: 71,4 kg</div>
-          <div class="current-weight" id="player1Current">
-            Nuvarande: 71,4 kg
+          <div
+            class="current-weight"
+            style="color: #97b9f1"
+            id="player1Current"
+          >
+            Nuvarande: 71.3 kg
           </div>
+
           <div class="progress" id="player1Progress">Återstår: 5,0 kg</div>
           <div class="progress-bar-container">
             <div class="progress-bar" id="player1Bar" style="width: 0%">
@@ -461,7 +472,7 @@
       const startWeights = { 1: 71.4, 2: 65.5 };
       const goalWeight = 5.0; // kg to lose
 
-      // Firebase setup (TILLAGT)
+      // Firebase setup
       let db = null;
       async function initFirebase() {
         try {
@@ -485,7 +496,6 @@
           const app = initializeApp(firebaseConfig);
           db = getFirestore(app);
 
-          // Listen to Firebase changes
           const weightsRef = collection(db, "weights");
           onSnapshot(weightsRef, (snapshot) => {
             snapshot.docChanges().forEach((change) => {
@@ -507,14 +517,14 @@
         }
       }
 
-      // Firebase save function (TILLAGT)
       async function saveToFirebase(player, date, weight) {
         if (db) {
           try {
             const { doc, setDoc } = await import(
               "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
             );
-            await setDoc(doc(db, "weights", `${date}-player${player}`), {
+            const docId = `${date.replace(/\//g, "-")}-player${player}`;
+            await setDoc(doc(db, "weights", docId), {
               player: parseInt(player),
               date: date,
               weight: parseFloat(weight),
@@ -526,13 +536,11 @@
         }
       }
 
-      // Load saved data from localStorage
+      // LocalStorage functions
       function loadWeightData() {
         const savedData = localStorage.getItem("battleOfFatizWeights");
         if (savedData) {
           const weights = JSON.parse(savedData);
-
-          // Restore all saved weights
           Object.keys(weights).forEach((date) => {
             const player1Input = document.querySelector(
               `input[data-player="1"][data-date="${date}"]`
@@ -540,7 +548,6 @@
             const player2Input = document.querySelector(
               `input[data-player="2"][data-date="${date}"]`
             );
-
             if (player1Input && weights[date].player1) {
               player1Input.value = weights[date].player1;
             }
@@ -548,290 +555,109 @@
               player2Input.value = weights[date].player2;
             }
           });
-
-          // Update colors and progress after loading
           document.querySelectorAll(".weight-input").forEach((input) => {
-            if (input.value) {
-              updateWeightColors({ target: input });
-            }
+            if (input.value) updateWeightColors({ target: input });
           });
           updateProgress();
         }
       }
 
-      // Save weight data to localStorage
       function saveWeightData() {
-        const weights = {};
-
-        // Get all dates
-        const dates = [
-          ...new Set(
-            Array.from(document.querySelectorAll(".weight-input")).map(
-              (input) => input.dataset.date
-            )
-          ),
-        ];
-
-        dates.forEach((date) => {
-          const player1Input = document.querySelector(
-            `input[data-player="1"][data-date="${date}"]`
-          );
-          const player2Input = document.querySelector(
-            `input[data-player="2"][data-date="${date}"]`
-          );
-
-          if (
-            (player1Input && player1Input.value) ||
-            (player2Input && player2Input.value)
-          ) {
-            weights[date] = {
-              player1: player1Input ? player1Input.value : "",
-              player2: player2Input ? player2Input.value : "",
-            };
-          }
+        const data = {};
+        document.querySelectorAll(".weight-input").forEach((input) => {
+          const date = input.dataset.date;
+          const player = input.dataset.player;
+          if (!data[date]) data[date] = {};
+          data[date]["player" + player] = parseFloat(input.value) || "";
         });
-
-        localStorage.setItem("battleOfFatizWeights", JSON.stringify(weights));
-      }
-
-      function getPreviousWeight(player, currentDate) {
-        // Get all inputs for this player
-        const playerInputs = document.querySelectorAll(
-          `input[data-player="${player}"]`
-        );
-        const inputsArray = Array.from(playerInputs);
-
-        // Find current input index
-        const currentInput = document.querySelector(
-          `input[data-player="${player}"][data-date="${currentDate}"]`
-        );
-        const currentIndex = inputsArray.indexOf(currentInput);
-
-        // Look for previous non-empty value
-        for (let i = currentIndex - 1; i >= 0; i--) {
-          if (inputsArray[i].value) {
-            return parseFloat(inputsArray[i].value);
-          }
-        }
-
-        // If no previous value found, return start weight
-        return startWeights[player];
+        localStorage.setItem("battleOfFatizWeights", JSON.stringify(data));
       }
 
       function updateWeightColors(event) {
         const input = event.target;
         const player = input.dataset.player;
-        const currentDate = input.dataset.date;
-        const currentWeight = parseFloat(input.value);
-
-        if (isNaN(currentWeight)) {
-          input.className = "weight-input";
-          return;
+        const date = input.dataset.date;
+        const prevRow = input.closest("tr").previousElementSibling;
+        let prevWeight = null;
+        if (prevRow) {
+          const prevInput = prevRow.querySelector(
+            `input[data-player="${player}"]`
+          );
+          if (prevInput && prevInput.value)
+            prevWeight = parseFloat(prevInput.value);
         }
 
-        // Find previous weight
-        const previousWeight = getPreviousWeight(player, currentDate);
-
-        // Apply color based on weight change (no validation here)
-        if (currentWeight > previousWeight) {
-          input.className = "weight-input weight-up";
-        } else if (currentWeight === previousWeight) {
-          input.className = "weight-input weight-same";
-        } else {
-          input.className = "weight-input weight-down";
-        }
-      }
-
-      function validateWeight(input) {
-        const player = input.dataset.player;
-        const currentDate = input.dataset.date;
-        const currentWeight = parseFloat(input.value);
-
-        if (isNaN(currentWeight)) {
-          return true;
+        if (!prevWeight) {
+          prevWeight = startWeights[player];
         }
 
-        // Find previous weight
-        const previousWeight = getPreviousWeight(player, currentDate);
+        const weight = parseFloat(input.value);
 
-        // Validate weight range (±2kg from previous weight)
-        const minWeight = previousWeight - 2;
-        const maxWeight = previousWeight + 2;
+        input.classList.remove("weight-up", "weight-down", "weight-same");
 
-        if (currentWeight < minWeight || currentWeight > maxWeight) {
-          // Reset to previous weight if out of range
-          input.value = previousWeight.toFixed(1);
+        if (!isNaN(weight)) {
+          if (weight > prevWeight) input.classList.add("weight-up");
+          else if (weight < prevWeight) input.classList.add("weight-down");
+          else input.classList.add("weight-same");
 
-          // Show temporary warning
-          input.style.backgroundColor = "#fecaca";
-          input.style.borderColor = "#dc2626";
-
-          setTimeout(() => {
-            updateWeightColors({ target: input });
-          }, 1000);
-
-          return false;
+          saveToFirebase(player, date, weight);
         }
 
-        return true;
+        saveWeightData();
+        updateProgress();
       }
 
       function updateProgress() {
-        // Get latest weights for both players
-        const player1Inputs = document.querySelectorAll(
-          'input[data-player="1"]'
-        );
-        const player2Inputs = document.querySelectorAll(
-          'input[data-player="2"]'
-        );
+        const playerWeights = {};
 
-        let latestWeight1 = startWeights[1];
-        let latestWeight2 = startWeights[2];
+        [1, 2].forEach((player) => {
+          const inputs = Array.from(
+            document.querySelectorAll(`input[data-player="${player}"]`)
+          ).filter((i) => i.value);
 
-        // Find the latest entered weight for each player
-        for (let i = player1Inputs.length - 1; i >= 0; i--) {
-          if (player1Inputs[i].value) {
-            latestWeight1 = parseFloat(player1Inputs[i].value);
-            break;
+          let lastWeight = startWeights[player];
+          if (inputs.length) {
+            lastWeight = parseFloat(inputs[inputs.length - 1].value);
           }
-        }
+          playerWeights[player] = lastWeight;
 
-        for (let i = player2Inputs.length - 1; i >= 0; i--) {
-          if (player2Inputs[i].value) {
-            latestWeight2 = parseFloat(player2Inputs[i].value);
-            break;
-          }
-        }
+          const lost = Math.max(0, startWeights[player] - lastWeight);
+          const remaining = Math.max(0, goalWeight - lost);
+          const percent = Math.min((lost / goalWeight) * 100, 100);
 
-        // Calculate progress
-        const lost1 = Math.max(0, startWeights[1] - latestWeight1);
-        const lost2 = Math.max(0, startWeights[2] - latestWeight2);
-        const remaining1 = Math.max(0, goalWeight - lost1);
-        const remaining2 = Math.max(0, goalWeight - lost2);
+          const currentDiv = document.getElementById(`player${player}Current`);
+          currentDiv.innerText = "Nuvarande: " + lastWeight.toFixed(1) + " kg";
+          currentDiv.style.color = "#97b9f1"; // behåll blå färg
 
-        // Calculate progress percentages
-        const progress1 = Math.min(100, (lost1 / goalWeight) * 100);
-        const progress2 = Math.min(100, (lost2 / goalWeight) * 100);
+          document.getElementById(`player${player}Progress`).innerText =
+            "Återstår: " + remaining.toFixed(1) + " kg";
+          document.getElementById(`player${player}Bar`).style.width =
+            percent + "%";
+          document.getElementById(`player${player}BarText`).innerText =
+            lost.toFixed(1) + " / " + goalWeight + " kg";
+        });
 
-        // Update display
-        document.getElementById(
-          "player1Current"
-        ).textContent = `Nuvarande: ${latestWeight1.toFixed(1)} kg`;
-        document.getElementById(
-          "player2Current"
-        ).textContent = `Nuvarande: ${latestWeight2.toFixed(1)} kg`;
-        document.getElementById(
-          "player1Progress"
-        ).textContent = `Återstår: ${remaining1.toFixed(1)} kg`;
-        document.getElementById(
-          "player2Progress"
-        ).textContent = `Återstår: ${remaining2.toFixed(1)} kg`;
+        // Bestäm vem som leder (mest vikt förlorad)
+        const lost1 = startWeights[1] - playerWeights[1];
+        const lost2 = startWeights[2] - playerWeights[2];
 
-        // Update progress bars
-        document.getElementById("player1Bar").style.width = progress1 + "%";
-        document.getElementById("player2Bar").style.width = progress2 + "%";
-        document.getElementById(
-          "player1BarText"
-        ).textContent = `${lost1.toFixed(1)} / ${goalWeight.toFixed(1)} kg`;
-        document.getElementById(
-          "player2BarText"
-        ).textContent = `${lost2.toFixed(1)} / ${goalWeight.toFixed(1)} kg`;
+        const player1Box = document.getElementById("player1");
+        const player2Box = document.getElementById("player2");
 
-        // Update table headers with flags
-        const player1Header = document.querySelector("th:nth-child(2)");
-        const player2Header = document.querySelector("th:nth-child(3)");
+        player1Box.classList.remove("leading");
+        player2Box.classList.remove("leading");
 
-        // Remove existing flags
-        document
-          .querySelectorAll(".leader-flag")
-          .forEach((flag) => flag.remove());
-
-        // Check for winner and leader
-        const player1Element = document.getElementById("player1");
-        const player2Element = document.getElementById("player2");
-
-        // Remove all special classes
-        player1Element.classList.remove("winner", "leading");
-        player2Element.classList.remove("winner", "leading");
-
-        if (remaining1 === 0 && remaining2 > 0) {
-          // Player 1 wins
-          player1Element.classList.add("winner");
-          const flag = document.createElement("span");
-          flag.className = "leader-flag";
-          flag.textContent = "🏆";
-          player1Header.appendChild(flag);
-        } else if (remaining2 === 0 && remaining1 > 0) {
-          // Player 2 wins
-          player2Element.classList.add("winner");
-          const flag = document.createElement("span");
-          flag.className = "leader-flag";
-          flag.textContent = "🏆";
-          player2Header.appendChild(flag);
-        } else if (remaining1 !== remaining2) {
-          // Someone is leading (but hasn't won yet)
-          if (remaining1 < remaining2) {
-            // Player 1 is leading (has less weight to lose)
-            player1Element.classList.add("leading");
-            const flag = document.createElement("span");
-            flag.className = "leader-flag";
-            flag.textContent = "🚩";
-            player1Header.appendChild(flag);
-          } else {
-            // Player 2 is leading
-            player2Element.classList.add("leading");
-            const flag = document.createElement("span");
-            flag.className = "leader-flag";
-            flag.textContent = "🚩";
-            player2Header.appendChild(flag);
-          }
-        }
+        if (lost1 > lost2) player1Box.classList.add("leading");
+        else if (lost2 > lost1) player2Box.classList.add("leading");
+        // Om lika, ingen glow
       }
 
-      // Add event listeners to all inputs
       document.querySelectorAll(".weight-input").forEach((input) => {
         input.addEventListener("input", updateWeightColors);
-        input.addEventListener("blur", function () {
-          if (validateWeight(input)) {
-            updateProgress();
-            saveWeightData(); // Save after each weight entry
-            // Save to Firebase too (TILLAGT)
-            if (input.value) {
-              saveToFirebase(
-                input.dataset.player,
-                input.dataset.date,
-                input.value
-              );
-            }
-          }
-        });
-        input.addEventListener("keypress", function (e) {
-          if (e.key === "Enter") {
-            if (validateWeight(input)) {
-              updateProgress();
-              saveWeightData(); // Save after each weight entry
-              // Save to Firebase too (TILLAGT)
-              if (input.value) {
-                saveToFirebase(
-                  input.dataset.player,
-                  input.dataset.date,
-                  input.value
-                );
-              }
-            }
-            input.blur();
-          }
-        });
       });
 
-      // Load saved data when page loads
-      window.addEventListener("load", function () {
-        loadWeightData();
-      });
-
-      // Initial progress update and Firebase init
-      updateProgress();
-      initFirebase(); // TILLAGT
+      loadWeightData();
+      initFirebase();
     </script>
   </body>
 </html>
