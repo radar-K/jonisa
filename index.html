@@ -461,6 +461,71 @@
       const startWeights = { 1: 71.4, 2: 65.5 };
       const goalWeight = 5.0; // kg to lose
 
+      // Firebase setup (TILLAGT)
+      let db = null;
+      async function initFirebase() {
+        try {
+          const { initializeApp } = await import(
+            "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"
+          );
+          const { getFirestore, doc, setDoc, onSnapshot, collection } =
+            await import(
+              "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+            );
+
+          const firebaseConfig = {
+            apiKey: "AIzaSyDyrOK_a2igP963TokPnllw7MN-dFByaYk",
+            authDomain: "thebattleofthefatiz.firebaseapp.com",
+            projectId: "thebattleofthefatiz",
+            storageBucket: "thebattleofthefatiz.firebasestorage.app",
+            messagingSenderId: "1070564367645",
+            appId: "1:1070564367645:web:578a3e117ce85e483d95f4",
+          };
+
+          const app = initializeApp(firebaseConfig);
+          db = getFirestore(app);
+
+          // Listen to Firebase changes
+          const weightsRef = collection(db, "weights");
+          onSnapshot(weightsRef, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+              if (change.type === "added" || change.type === "modified") {
+                const data = change.doc.data();
+                const input = document.querySelector(
+                  `input[data-player="${data.player}"][data-date="${data.date}"]`
+                );
+                if (input && input.value !== data.weight.toString()) {
+                  input.value = data.weight;
+                  updateWeightColors({ target: input });
+                }
+              }
+            });
+            updateProgress();
+          });
+        } catch (error) {
+          console.log("Firebase not available, using localStorage only");
+        }
+      }
+
+      // Firebase save function (TILLAGT)
+      async function saveToFirebase(player, date, weight) {
+        if (db) {
+          try {
+            const { doc, setDoc } = await import(
+              "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+            );
+            await setDoc(doc(db, "weights", `${date}-player${player}`), {
+              player: parseInt(player),
+              date: date,
+              weight: parseFloat(weight),
+              timestamp: new Date(),
+            });
+          } catch (error) {
+            console.error("Firebase save error:", error);
+          }
+        }
+      }
+
       // Load saved data from localStorage
       function loadWeightData() {
         const savedData = localStorage.getItem("battleOfFatizWeights");
@@ -730,6 +795,14 @@
           if (validateWeight(input)) {
             updateProgress();
             saveWeightData(); // Save after each weight entry
+            // Save to Firebase too (TILLAGT)
+            if (input.value) {
+              saveToFirebase(
+                input.dataset.player,
+                input.dataset.date,
+                input.value
+              );
+            }
           }
         });
         input.addEventListener("keypress", function (e) {
@@ -737,6 +810,14 @@
             if (validateWeight(input)) {
               updateProgress();
               saveWeightData(); // Save after each weight entry
+              // Save to Firebase too (TILLAGT)
+              if (input.value) {
+                saveToFirebase(
+                  input.dataset.player,
+                  input.dataset.date,
+                  input.value
+                );
+              }
             }
             input.blur();
           }
@@ -748,8 +829,9 @@
         loadWeightData();
       });
 
-      // Initial progress update
+      // Initial progress update and Firebase init
       updateProgress();
+      initFirebase(); // TILLAGT
     </script>
   </body>
 </html>
