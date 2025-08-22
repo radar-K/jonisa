@@ -467,13 +467,12 @@
         </tbody>
       </table>
     </div>
-
     <script>
       const startWeights = { 1: 71.4, 2: 65.5 };
       const goalWeight = 5.0; // kg to lose
-
-      // Firebase setup
       let db = null;
+
+      // 🔹 Init Firebase
       async function initFirebase() {
         try {
           const { initializeApp } = await import(
@@ -496,7 +495,9 @@
 
           const app = initializeApp(firebaseConfig);
           db = getFirestore(app);
+          console.log("Firebase initialized", db);
 
+          // 🔹 Lyssna på ändringar i "weights"
           const weightsRef = collection(db, "weights");
           onSnapshot(weightsRef, (snapshot) => {
             snapshot.docChanges().forEach((change) => {
@@ -514,30 +515,31 @@
             updateProgress();
           });
         } catch (error) {
-          console.log("Firebase not available, using localStorage only");
+          console.log("Firebase not available, using localStorage only", error);
         }
       }
 
+      // 🔹 Spara vikt till Firebase
       async function saveToFirebase(player, date, weight) {
-        if (db) {
-          try {
-            const { doc, setDoc } = await import(
-              "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
-            );
-            const docId = `${date.replace(/\//g, "-")}-player${player}`;
-            await setDoc(doc(db, "weights", docId), {
-              player: parseInt(player),
-              date: date,
-              weight: parseFloat(weight),
-              timestamp: new Date(),
-            });
-          } catch (error) {
-            console.error("Firebase save error:", error);
-          }
+        if (!db) return;
+        try {
+          const { doc, setDoc } = await import(
+            "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+          );
+
+          const docId = `${date.replace(/\//g, "-")}-player${player}`;
+          await setDoc(doc(db, "weights", docId), {
+            player: parseInt(player),
+            date: date,
+            weight: parseFloat(weight),
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          console.error("Firebase save error:", error);
         }
       }
 
-      // LocalStorage functions
+      // 🔹 LocalStorage
       function loadWeightData() {
         const savedData = localStorage.getItem("battleOfFatizWeights");
         if (savedData) {
@@ -574,12 +576,14 @@
         localStorage.setItem("battleOfFatizWeights", JSON.stringify(data));
       }
 
+      // 🔹 Uppdatera färg baserat på viktändring
       function updateWeightColors(event) {
         const input = event.target;
         const player = input.dataset.player;
         const date = input.dataset.date;
         const prevRow = input.closest("tr").previousElementSibling;
         let prevWeight = null;
+
         if (prevRow) {
           const prevInput = prevRow.querySelector(
             `input[data-player="${player}"]`
@@ -588,9 +592,7 @@
             prevWeight = parseFloat(prevInput.value);
         }
 
-        if (!prevWeight) {
-          prevWeight = startWeights[player];
-        }
+        if (!prevWeight) prevWeight = startWeights[player];
 
         const weight = parseFloat(input.value);
 
@@ -601,13 +603,14 @@
           else if (weight < prevWeight) input.classList.add("weight-down");
           else input.classList.add("weight-same");
 
-          saveToFirebase(player, date, weight);
+          saveToFirebase(player, date, weight); // 🔹 Spara i Firebase
         }
 
         saveWeightData();
         updateProgress();
       }
 
+      // 🔹 Uppdatera progress-bars och nuvarande vikt
       function updateProgress() {
         const playerWeights = {};
 
@@ -617,19 +620,16 @@
           ).filter((i) => i.value);
 
           let lastWeight = startWeights[player];
-          if (inputs.length) {
+          if (inputs.length)
             lastWeight = parseFloat(inputs[inputs.length - 1].value);
-          }
           playerWeights[player] = lastWeight;
 
           const lost = Math.max(0, startWeights[player] - lastWeight);
           const remaining = Math.max(0, goalWeight - lost);
           const percent = Math.min((lost / goalWeight) * 100, 100);
 
-          const currentDiv = document.getElementById(`player${player}Current`);
-          currentDiv.innerText = "Nuvarande: " + lastWeight.toFixed(1) + " kg";
-          currentDiv.style.color = "#97b9f1"; // behåll blå färg
-
+          document.getElementById(`player${player}Current`).innerText =
+            "Nuvarande: " + lastWeight.toFixed(1) + " kg";
           document.getElementById(`player${player}Progress`).innerText =
             "Återstår: " + remaining.toFixed(1) + " kg";
           document.getElementById(`player${player}Bar`).style.width =
@@ -638,7 +638,7 @@
             lost.toFixed(1) + " / " + goalWeight + " kg";
         });
 
-        // Bestäm vem som leder (mest vikt förlorad)
+        // 🔹 Bestäm vem som leder
         const lost1 = startWeights[1] - playerWeights[1];
         const lost2 = startWeights[2] - playerWeights[2];
 
@@ -650,13 +650,14 @@
 
         if (lost1 > lost2) player1Box.classList.add("leading");
         else if (lost2 > lost1) player2Box.classList.add("leading");
-        // Om lika, ingen glow
       }
 
+      // 🔹 Event listener
       document.querySelectorAll(".weight-input").forEach((input) => {
         input.addEventListener("input", updateWeightColors);
       });
 
+      // 🔹 Init
       loadWeightData();
       initFirebase();
     </script>
