@@ -263,7 +263,7 @@
       <div class="players">
         <div class="player" id="player1">
           <h2 id="player1Name">Jonisa the fatSlayer</h2>
-          <div class="start-weight">Startvikt: 71,4 kg</div>
+          <div class="start-weight">Startvikt: 71,1 kg</div>
           <div
             class="current-weight"
             style="color: #97b9f1"
@@ -281,7 +281,7 @@
         </div>
         <div class="player" id="player2">
           <h2 id="player2Name">Princess fatass</h2>
-          <div class="start-weight">Startvikt: 65,5 kg</div>
+          <div class="start-weight">Startvikt: 66,7 kg</div>
           <div class="current-weight" id="player2Current">
             Nuvarande: 65,5 kg
           </div>
@@ -660,6 +660,56 @@
       // 🔹 Init
       loadWeightData();
       initFirebase();
+
+      // 🔹 Lägg till nya rader automatiskt
+      function autoExtendTable() {
+        const tableBody = document.getElementById("weightTableBody");
+        const rows = tableBody.querySelectorAll("tr");
+        if (!rows.length) return;
+
+        // Hämta sista datumet i tabellen
+        const lastRow = rows[rows.length - 1];
+        const lastDateStr = lastRow.querySelector(".date-cell").innerText;
+        const [lastMonth, lastDay] = lastDateStr.split("/").map(Number);
+
+        const lastDate = new Date(
+          new Date().getFullYear(),
+          lastMonth - 1,
+          lastDay
+        );
+
+        // Kolla dagens datum
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Lägg till rader fram till idag
+        let nextDate = new Date(lastDate);
+        while (nextDate < today) {
+          nextDate.setDate(nextDate.getDate() + 1);
+          const mm = String(nextDate.getMonth() + 1).padStart(2, "0");
+          const dd = String(nextDate.getDate()).padStart(2, "0");
+          const dateStr = `${mm}/${dd}`;
+
+          const newRow = document.createElement("tr");
+          newRow.innerHTML = `
+      <td class="date-cell">${dateStr}</td>
+      <td><input type="number" class="weight-input" step="0.1" placeholder="0.0" data-player="1" data-date="${dateStr}" /></td>
+      <td><input type="number" class="weight-input" step="0.1" placeholder="0.0" data-player="2" data-date="${dateStr}" /></td>
+    `;
+          tableBody.appendChild(newRow);
+        }
+
+        // Koppla events till nya inputs
+        document.querySelectorAll(".weight-input").forEach((input) => {
+          if (!input.dataset.listener) {
+            input.addEventListener("input", updateWeightColors);
+            input.dataset.listener = "true"; // så vi inte dubblar listeners
+          }
+        });
+      }
+
+      // 🔹 Kör direkt när sidan laddas
+      autoExtendTable();
     </script>
   </body>
 </html>
