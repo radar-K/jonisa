@@ -269,7 +269,7 @@
             style="color: #97b9f1"
             id="player1Current"
           >
-            Nuvarande: 71.3 kg
+            Nuvarande: 71.1 kg
           </div>
 
           <div class="progress" id="player1Progress">Återstår: 5,0 kg</div>
@@ -283,7 +283,7 @@
           <h2 id="player2Name">Princess fatass</h2>
           <div class="start-weight">Startvikt: 66,7 kg</div>
           <div class="current-weight" id="player2Current">
-            Nuvarande: 65,5 kg
+            Nuvarande: 66,7 kg
           </div>
           <div class="progress" id="player2Progress">Återstår: 5,0 kg</div>
           <div class="progress-bar-container">
@@ -303,172 +303,12 @@
           </tr>
         </thead>
         <tbody id="weightTableBody">
-          <tr>
-            <td class="date-cell">08/22</td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                value="71.4"
-                data-player="1"
-                data-date="08/22"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                value="65.5"
-                data-player="2"
-                data-date="08/22"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td class="date-cell">08/23</td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="1"
-                data-date="08/23"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="2"
-                data-date="08/23"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td class="date-cell">08/24</td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="1"
-                data-date="08/24"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="2"
-                data-date="08/24"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td class="date-cell">08/25</td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="1"
-                data-date="08/25"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="2"
-                data-date="08/25"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td class="date-cell">08/26</td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="1"
-                data-date="08/26"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="2"
-                data-date="08/26"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td class="date-cell">08/27</td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="1"
-                data-date="08/27"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="2"
-                data-date="08/27"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td class="date-cell">08/28</td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="1"
-                data-date="08/28"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                class="weight-input"
-                step="0.1"
-                placeholder="0.0"
-                data-player="2"
-                data-date="08/28"
-              />
-            </td>
-          </tr>
+          <!-- Table rows will be generated by JavaScript -->
         </tbody>
       </table>
     </div>
     <script>
-      const startWeights = { 1: 71.4, 2: 66.7 };
+      const startWeights = { 1: 71.1, 2: 66.7 };
       const goalWeight = 5.0; // kg to lose
       let db = null;
 
@@ -478,10 +318,16 @@
           const { initializeApp } = await import(
             "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"
           );
-          const { getFirestore, doc, setDoc, onSnapshot, collection } =
-            await import(
-              "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
-            );
+          const {
+            getFirestore,
+            doc,
+            setDoc,
+            deleteDoc,
+            onSnapshot,
+            collection,
+          } = await import(
+            "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+          );
 
           const firebaseConfig = {
             apiKey: "AIzaSyAfDi2aM-MoE_HLj46oHHwqUYZ2ZZHObW4",
@@ -510,6 +356,19 @@
                   input.value = data.weight;
                   updateWeightColors({ target: input });
                 }
+              } else if (change.type === "removed") {
+                const data = change.doc.data();
+                const input = document.querySelector(
+                  `input[data-player="${data.player}"][data-date="${data.date}"]`
+                );
+                if (input) {
+                  input.value = "";
+                  input.classList.remove(
+                    "weight-up",
+                    "weight-down",
+                    "weight-same"
+                  );
+                }
               }
             });
             updateProgress();
@@ -536,6 +395,22 @@
           });
         } catch (error) {
           console.error("Firebase save error:", error);
+        }
+      }
+
+      // 🔹 Radera vikt från Firebase
+      async function deleteFromFirebase(player, date) {
+        if (!db) return;
+        try {
+          const { doc, deleteDoc } = await import(
+            "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+          );
+
+          const docId = `${date.replace(/\//g, "-")}-player${player}`;
+          await deleteDoc(doc(db, "weights", docId));
+          console.log(`Deleted weight for player ${player} on ${date}`);
+        } catch (error) {
+          console.error("Firebase delete error:", error);
         }
       }
 
@@ -571,7 +446,14 @@
           const date = input.dataset.date;
           const player = input.dataset.player;
           if (!data[date]) data[date] = {};
-          data[date]["player" + player] = parseFloat(input.value) || "";
+
+          // Om input är tom, ta bort från localStorage också
+          if (input.value && input.value.trim() !== "") {
+            data[date]["player" + player] = parseFloat(input.value);
+          } else {
+            // Om värdet är tomt, sätt till null eller ta bort från data
+            data[date]["player" + player] = null;
+          }
         });
         localStorage.setItem("battleOfFatizWeights", JSON.stringify(data));
       }
@@ -594,11 +476,22 @@
 
         if (!prevWeight) prevWeight = startWeights[player];
 
-        const weight = parseFloat(input.value);
-
+        // Ta bort alla färgklasser först
         input.classList.remove("weight-up", "weight-down", "weight-same");
 
+        // Kontrollera om input är tomt eller bara innehåller whitespace
+        if (!input.value || input.value.trim() === "") {
+          // Om input är tomt, radera från Firebase och localStorage
+          deleteFromFirebase(player, date);
+          saveWeightData();
+          updateProgress();
+          return;
+        }
+
+        const weight = parseFloat(input.value);
+
         if (!isNaN(weight)) {
+          // Endast spara om det är ett giltigt nummer
           if (weight > prevWeight) input.classList.add("weight-up");
           else if (weight < prevWeight) input.classList.add("weight-down");
           else input.classList.add("weight-same");
@@ -617,7 +510,7 @@
         [1, 2].forEach((player) => {
           const inputs = Array.from(
             document.querySelectorAll(`input[data-player="${player}"]`)
-          ).filter((i) => i.value);
+          ).filter((i) => i.value && i.value.trim() !== "");
 
           let lastWeight = startWeights[player];
           if (inputs.length)
@@ -652,64 +545,58 @@
         else if (lost2 > lost1) player2Box.classList.add("leading");
       }
 
-      // 🔹 Event listener
-      document.querySelectorAll(".weight-input").forEach((input) => {
-        input.addEventListener("input", updateWeightColors);
-      });
-
-      // 🔹 Init
-      loadWeightData();
-      initFirebase();
-
-      // 🔹 Lägg till nya rader automatiskt
-      function autoExtendTable() {
+      // 🔹 Generera 30 rader för tabellen från imorgon
+      function generateTable() {
         const tableBody = document.getElementById("weightTableBody");
-        const rows = tableBody.querySelectorAll("tr");
-        if (!rows.length) return;
 
-        // Hämta sista datumet i tabellen
-        const lastRow = rows[rows.length - 1];
-        const lastDateStr = lastRow.querySelector(".date-cell").innerText;
-        const [lastMonth, lastDay] = lastDateStr.split("/").map(Number);
+        // Börja från imorgon (30 augusti 2025)
+        const tomorrow = new Date(2025, 7, 30); // Month is 0-indexed (7 = August)
 
-        const lastDate = new Date(
-          new Date().getFullYear(),
-          lastMonth - 1,
-          lastDay
-        );
+        for (let i = 0; i < 30; i++) {
+          const currentDate = new Date(tomorrow);
+          currentDate.setDate(tomorrow.getDate() + i);
 
-        // Kolla dagens datum
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // Lägg till rader fram till idag
-        let nextDate = new Date(lastDate);
-        while (nextDate < today) {
-          nextDate.setDate(nextDate.getDate() + 1);
-          const mm = String(nextDate.getMonth() + 1).padStart(2, "0");
-          const dd = String(nextDate.getDate()).padStart(2, "0");
+          const mm = String(currentDate.getMonth() + 1).padStart(2, "0");
+          const dd = String(currentDate.getDate()).padStart(2, "0");
           const dateStr = `${mm}/${dd}`;
 
           const newRow = document.createElement("tr");
           newRow.innerHTML = `
-      <td class="date-cell">${dateStr}</td>
-      <td><input type="number" class="weight-input" step="0.1" placeholder="0.0" data-player="1" data-date="${dateStr}" /></td>
-      <td><input type="number" class="weight-input" step="0.1" placeholder="0.0" data-player="2" data-date="${dateStr}" /></td>
-    `;
+            <td class="date-cell">${dateStr}</td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="1"
+                data-date="${dateStr}"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="weight-input"
+                step="0.1"
+                placeholder="0.0"
+                data-player="2"
+                data-date="${dateStr}"
+              />
+            </td>
+          `;
           tableBody.appendChild(newRow);
         }
 
-        // Koppla events till nya inputs
+        // Koppla events till alla inputs
         document.querySelectorAll(".weight-input").forEach((input) => {
-          if (!input.dataset.listener) {
-            input.addEventListener("input", updateWeightColors);
-            input.dataset.listener = "true"; // så vi inte dubblar listeners
-          }
+          input.addEventListener("input", updateWeightColors);
         });
       }
 
-      // 🔹 Kör direkt när sidan laddas
-      autoExtendTable();
+      // 🔹 Init
+      generateTable(); // Generera tabellen först
+      loadWeightData(); // Ladda sparad data
+      initFirebase(); // Initialisera Firebase
     </script>
   </body>
 </html>
